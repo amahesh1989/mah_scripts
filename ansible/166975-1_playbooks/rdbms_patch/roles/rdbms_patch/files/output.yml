@@ -1,0 +1,4 @@
+patch_already_applied: "no"
+patch_downloaded: "yes"
+new_home_exists: "yes"
+new_home: "/u02/app/oracle/product/19.0.0.0/dbhome_8"

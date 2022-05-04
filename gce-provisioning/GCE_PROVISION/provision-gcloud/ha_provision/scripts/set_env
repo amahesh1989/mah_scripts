@@ -1,0 +1,4 @@
+export ORACLE_BASE=/u01/app/grid_base
+export ORACLE_HOME=/u01/app/oragrid/product/19.8.0.0.200714/grid/
+export WORKING_DIR=/tmp/oracle_install/ha_provision/scripts
+export LOGFILE=$WORKING_DIR/oracle_has_configure

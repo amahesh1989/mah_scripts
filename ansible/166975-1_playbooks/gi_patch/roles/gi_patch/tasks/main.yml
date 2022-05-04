@@ -1,0 +1,34 @@
+- name: get patch status
+  script: "roles/gi_patch/files/patch_status.sh {{ tgt_ver }} {{ mode }}"
+  register: scr_op
+
+- name: redirect op
+  local_action:
+    copy content={{ scr_op.stdout }} dest=roles/gi_patch/files/output.yml
+
+- name: load output
+  include_vars:
+    file: roles/gi_patch/files/output.yml
+    name: myvars
+
+- debug:
+   msg: 
+   - "Patch version is per standard already. Nothing to do.."
+  when: myvars['patch_needed'] == "no"
+
+- debug:
+    msg:
+    - "Patch image not found in software library. Please contact DBA"
+  when: myvars['patch_needed'] == "yes" and myvars['binary_found'] == "no"
+   
+- debug:
+    msg:
+    - "OK to patch"
+  when: myvars['patch_needed'] == "yes" and myvars['binary_found'] == "yes"
+
+
+- name: patch_db
+  debug:
+    msg: "Proceeding to patch"
+    #msg: "dbaascli database move --dbname {{ db_name }} --ohome {{ myvars['new_home'] }}"
+  when: myvars['patch_needed'] == "yes" and myvars['binary_found'] == "yes"

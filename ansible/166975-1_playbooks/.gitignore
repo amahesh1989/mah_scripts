@@ -1,0 +1,14 @@
+.idea/**
+*.lock
+*.pyc
+*.retry
+*.swp
+*.tar
+*.tgz
+*.rpm
+*.zip
+dbrun_[0-9]*[_\-][0-9]*_[a-z\.]*
+*.bash
+*.sh
+*.ksh
+*.py

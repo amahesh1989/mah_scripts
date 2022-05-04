@@ -1,0 +1,6 @@
+- hosts: "{{ target_hosts }}"
+  gather_facts: no
+  remote_user: oracle
+  
+  roles:
+   - gi_patch

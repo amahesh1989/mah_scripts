@@ -1,0 +1,7 @@
+[all:vars]
+dbRUN_narid='166975-1'
+dbRUN_instance_name='Oracle Cloud-On Premise'
+ansible_ssh_private_key_file=/home/dbrun/dbRunPlaybooks/166975-1/hosts/UAT/ssh_keys/dbrun_166975_1_uat
+env='UAT'
+
+[primary_host]

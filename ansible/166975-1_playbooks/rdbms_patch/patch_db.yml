@@ -1,0 +1,4 @@
+- hosts: patch_list
+  gather_facts: no
+  roles:
+   - rdbms_patch

@@ -1,0 +1,4 @@
+Cx_oracle
+Flask==1.1.2
+requests
+gunicorn

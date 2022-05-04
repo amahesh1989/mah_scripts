@@ -1,0 +1,64 @@
+#!/bin/bash
+set -eo pipefail
+
+# Add steps here to install Oracle client libraries and header files.
+# Install these in a new subdirectory under /opt/app-root. Lets assume
+# you use /opt/app-root/oracle.
+export OIC_CLIENT_URL=${ARTIFACTORY_URL}/artifactory/dist-public-local/oracle/instantclient/12.2.0.1.0/instantclient-basic-linux.x64-12.2.0.1.0.zip
+export LIBAIO_LIB=${ARTIFACTORY_URL}/artifactory/conda-main-cache/linux-64/libaio-0.3.111-h14c3975_0.tar.bz2
+
+#ls -al /tmp
+
+#echo $ARTIFACTORY_API_KEY
+
+echo ' Downloading to /tmp/libaio-0.3.111-h14c3975_0.tar.bz2 '
+curl -kLH X-JFrog-Art-Api:$ARTIFACTORY_API_KEY $LIBAIO_LIB -o /tmp/libaio-0.3.111-h14c3975_0.tar.bz2
+
+echo ' Uncompressing to /tmp/libaio-0.3.111-h14c3975_0.tar '
+mkdir /opt/app-root/src/libaio-0.3.111-h14c3975_0/
+tar -xvf /tmp/libaio-0.3.111-h14c3975_0.tar.bz2 -C /opt/app-root/src/libaio-0.3.111-h14c3975_0/
+
+
+echo ' Deleting /tmp/libaio-0.3.111-h14c3975_0.tar.bz2'
+rm /tmp/libaio-0.3.111-h14c3975_0*
+
+
+echo ' Downloading /tmp/instantclient-basic-linux.x64-12.2.0.1.0.zip '
+curl -kLH X-JFrog-Art-Api:$ARTIFACTORY_API_KEY $OIC_CLIENT_URL -o /tmp/instantclient-basic-linux.x64-12.2.0.1.0.zip
+
+echo ' Unzipping /tmp/instantclient-basic-linux.x64-12.2.0.1.0.zip'
+unzip /tmp/instantclient-basic-linux.x64-12.2.0.1.0.zip -d /opt/app-root/src/
+
+echo ' listing files in /opt/app-root/src/ '
+ls -al /opt/app-root/src/
+
+echo ' Deleting /tmp/instantclient-basic-linux.x64-12.2.0.1.0.zip'
+rm /tmp/instantclient-basic-linux.x64-12.2.0.1.0.zip
+
+echo 'Create soft link for libclntsh.so.12.1 in /opt/app-root/src/instantclient_12_2/libclntsh.so'
+ln -s /opt/app-root/src/instantclient_12_2/libclntsh.so.12.1 /opt/app-root/src/instantclient_12_2/libclntsh.so
+echo 'Create soft link for libaio.so.1 /opt/app-root/src/instantclient_12_2/libaio.so'
+ln -s /opt/app-root/src/libaio-0.3.111-h14c3975_0/lib/libaio.so.1 /opt/app-root/src/instantclient_12_2/libaio.so.1
+
+echo 'Verify soft link'
+ls -al /opt/app-root/src/instantclient_12_2/
+
+# Set and export whatever environment variables you need to set
+# to have cx_Oracle when installed pickup header files and libraries
+# from under /opt/app-root/oracle. So that Oracle shared libraries
+# are found when the Python application is later run, this should
+# include setting LD_RUN_PATH environment variable to compile the
+# directory where the Oracle libraries are located into the module
+# when it is built.
+export LD_RUN_PATH=/opt/app-root/src/instantclient_12_2/
+
+# Set and export whatever environment variables you need to set
+# to have cx_Oracle when installed pickup header files and libraries
+# from under /opt/app-root/oracle. So that Oracle shared libraries
+# are found when the Python application is later run, this should
+# include setting LD_RUN_PATH environment variable to compile the
+# directory where the Oracle libraries are located into the module
+# when it is built.
+
+# Run the original assemble script.
+/usr/libexec/s2i/assemble

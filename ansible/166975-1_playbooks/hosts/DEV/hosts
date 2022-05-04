@@ -1,0 +1,15 @@
+[all:vars]
+dbRUN_narid='166975-1'
+dbRUN_instance_name='Oracle Cloud-On Premise'
+ansible_ssh_private_key_file=/home/dbrun/dbRunPlaybooks/166975-1/hosts/DEV/ssh_keys/dbrun_166975_1_dev
+env='DEV'
+
+[primary_host]
+
+[dev_hosts]
+fraoccod02vc01-db1.de.db.com
+fraoccod02vc02-db1.de.db.com
+
+[gi_patch_list]
+fraoccod02vc01-db1.de.db.com
+fraoccod02vc02-db1.de.db.com

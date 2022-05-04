@@ -1,0 +1,22 @@
+#!/bin/sh
+
+echo 'from s2i bin run script'
+pwd
+chmod -fR ugo+x /opt/app-root/src/*
+ls -la
+
+# Set and export whatever environment variables you need to set
+# to have cx_Oracle when installed pickup header files and libraries
+# from under /opt/app-root/oracle. So that Oracle shared libraries
+# are found when the Python application is later run, this should
+# include setting LD_RUN_PATH environment variable to compile the
+# directory where the Oracle libraries are located into the module
+# when it is built.
+
+export LD_LIBRARY_PATH=/opt/app-root/src/instantclient_12_2:$LD_LIBRARY_PATH
+echo $LD_LIBRARY_PATH
+
+# Run the original assemble script.
+/usr/libexec/s2i/run
+
+python app/main.py

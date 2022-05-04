@@ -1,0 +1,44 @@
+- name: get patch status
+  script: "roles/rdbms_patch/files/patch_status.sh {{ db_name }} {{ patchnum }} {{ patch_ver }}"
+  register: scr_op
+
+- name: redirect op
+  local_action:
+    copy content={{ scr_op.stdout }} dest=roles/rdbms_patch/files/output.yml
+
+- name: load output
+  include_vars:
+    file: roles/rdbms_patch/files/output.yml
+    name: myvars
+
+- debug:
+   msg: 
+   - "Patch Applied: {{ myvars['patch_already_applied'] }}. Nothing to do.."
+  when: myvars['patch_already_applied'] == "yes"
+
+- debug:
+    msg:
+    - "Patch Needs to be downloaded to the server. Please contact DBA"
+  when: myvars['patch_already_applied'] == "no" and myvars['patch_downloaded'] == "no"
+   
+- debug:
+    msg:
+    - "New home needs to be created using the downloaded binaries"
+  when: myvars['patch_already_applied'] == "no" and myvars['patch_downloaded'] == "yes" and myvars['new_home_exists'] == "no"
+
+
+- debug:
+   msg: 
+   - "New home with target binaries detected. Home can be switched"
+   - "New home: {{ myvars['new_home'] }}"
+  when: myvars['patch_already_applied'] == "no" and myvars['patch_downloaded'] == "yes" and myvars['new_home_exists'] == "yes"
+
+- name: patch_db
+  debug:
+    msg: "Proceeding to patch"
+    #msg: "dbaascli database move --dbname {{ db_name }} --ohome {{ myvars['new_home'] }}"
+  when: myvars['new_home_exists'] == "yes" and check_only  == "no"
+
+- name: 'Switching the database to new home'
+  command: "sudo dbaascli database move --dbname {{ db_name }} --ohome {{ myvars['new_home'] }}"
+  when: myvars['new_home_exists'] == "yes" and check_only == "no"

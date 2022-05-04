@@ -1,0 +1,21 @@
+- name: get patch status
+  script: "roles/rdbms_patch/files/patch_status.sh {{ db_name }}"
+  register: scr_op
+
+- name: redirect op
+  local_action:
+    copy content={{ scr_op.stdout }} dest=roles/rdbms_patch/files/output.yml
+
+- name: load output
+  include_vars:
+    file: roles/rdbms_patch/files/output.yml
+    name: myvars
+
+- debug:
+   msg: 
+   - "Patch status: {{ myvars['myvars']['status'] }}"
+   - "New home exists: {{ myvars['myvars']['new_home_exists'] }}"
+
+- debug:
+   msg: "New home: {{ myvars['myvars']['new_home'] }}"
+  when: myvars['myvars']['new_home'] is defined

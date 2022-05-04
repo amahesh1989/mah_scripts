@@ -1,0 +1,21 @@
+### ---------------------------------------------------------------------------------
+### Original Author: mahesh.kumar@db.com
+### Usage : Test script
+### Input Variables: NA
+### ---------------------------------------------------------------------------------
+
+---
+
+- hosts: dev_hosts
+  gather_facts: no
+  remote_user: oracle
+
+  tasks:
+    - name: Running the script...
+      shell: sudo dbaascli patch tools list
+      register: result
+      args:
+       executable: /bin/bash
+    - debug: msg="{{result.stdout_lines}}"
+
+

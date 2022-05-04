@@ -1,0 +1,15 @@
+---
+### ---------------------------------------------------------------------------------
+### Original Author: {provide your email here}
+### Usage :          {provide the description here}
+### Input Variables: {provide the list of variables used}
+### ---------------------------------------------------------------------------------
+
+- hosts: dev_hosts
+  gather_facts: no
+  remote_user: oracle
+  
+  tasks:
+    - name: test
+      shell: uname
+    
