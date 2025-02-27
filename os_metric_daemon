@@ -1,0 +1,138 @@
+while true
+do
+#dt=$(date +"%d-%m-%Y-%H-%M-%S")
+#dt=$(date +"%Y-%m-%d %H:%M:%S")
+#val=$(sar -u 1 300 |grep ^Average |awk '{print $NF}')
+
+commands=(
+    "LC_TIME='C' sar -u 1 300 > /tmp/.cpu_op"
+    "LC_TIME='C' sar -r 1 300 > /tmp/.mem_op"
+    "LC_TIME='C' sar -S 1 300 > /tmp/.swp_op"
+    "LC_TIME='C' sar -b 1 300 > /tmp/.io_op"
+)
+
+printf "%s\n"  "${commands[@]}" | xargs -I {} -P 4 sh -c "{}"
+sleep 2s
+
+#cpu_val=$(cat /tmp/.cpu_op |grep ^Average |awk '{print $NF}')
+#mem_val=$(cat /tmp/.mem_op |grep ^Average |awk '{print $4}')
+#swp_val=$(cat /tmp/.swp_op |grep ^Average |awk '{print $4}')
+#io_val=$(cat /tmp/.io_op |grep ^Average |awk '{print $5","$6}')
+
+cpu_val=$(cat /tmp/.cpu_op |egrep 'Average|idle' |awk 'NR==1 {for (i=1; i<=NF; i++) {f[$i] = i}} { print $(f["%idle"]) }' |grep -v idle)
+mem_val=$(cat /tmp/.mem_op |egrep 'Average|commit' |awk 'NR==1 {for (i=1; i<=NF; i++) {f[$i] = i}} { print $(f["%commit"]) }' |grep -v commit)
+swp_val=$(cat /tmp/.swp_op |egrep 'Average|swpused' |awk 'NR==1 {for (i=1; i<=NF; i++) {f[$i] = i}} { print $(f["%swpused"]) }' |grep -v swpused)
+io_val=$(cat /tmp/.io_op |egrep 'Average|bread' |awk 'NR==1 {for (i=1; i<=NF; i++) {f[$i] = i}} { print $(f["bread/s"])","$(f["bwrtn/s"])}'|grep -v bread)
+
+dt=$(date +"%Y-%m-%d %H:%M:%S")
+
+echo "${dt},${cpu_val},${mem_val},${swp_val},${io_val}" |grep -v "Binary" >> /app/ODR/dyn/ODR/log/os_stats.txt
+sleep 15s
+
+min=$(date +%M)
+if [[ ${min#0} -lt 10 ]];then
+cpu_model=$(cat /proc/cpuinfo |egrep "model name" |sort|uniq |awk -F":" '{print $NF}')
+[[ -z $cpu_model ]] && cpu_model="Could not be determined"
+
+cpu_clk=$(cat /proc/cpuinfo |grep "cpu MHz" |head -1|awk -F":" '{printf "%.1f GHz", $NF/1024+.1}')
+[[ -z $cpu_clk ]] && cpu_clk="Could not be determined"
+
+cpu_cnt=$(cat /proc/cpuinfo | grep processor |wc -l)
+[[ -z $cpu_cnt ]] && cpu_cnt="Could not be determined"
+
+tot_mem=$(free -m | grep ^Mem |awk '{printf "%.f",  $2/1024}')
+[[ -z $tot_mem ]] && tot_mem="Could not be determined"
+
+tot_huge=$(cat /proc/meminfo |egrep 'HugePages_Total|Hugepagesize' |awk -v sum=1 '{sum=sum*$2;}END{printf "%.1f" , sum/1024/1024;}')
+[[ -z $tot_huge ]] && tot_huge="Could not be determined"
+
+tot_swp=$(free -m | grep ^Swap|awk '{printf "%.f",  $2/1024}')
+[[ -z $tot_swp ]] && tot_swp="Could not be determined"
+
+collapsible_color=$(df -Ph |grep -v '/home/' |grep -v ^Filesystem |awk '{if($5+0 >= 90) sumc+=1;else if ($5+0 >= 80) sumw+=1} END {if (sumc>0) print "red"; else if (sumw>0)print "orange"; else print "green"}')
+
+echo "<table width=\"30%\" border=\"1\"  style=\"border-collapse: collapse\">
+
+<tr>
+<td>CPU Model</td>
+<td>$cpu_model</td>
+</tr>
+
+<tr>
+<td>CPU Clock Speed</td>
+<td>$cpu_clk</td>
+</tr>
+
+<tr>
+<td>Processors</td>
+<td>$cpu_cnt</td>
+</tr>
+
+<tr>
+<td>Total Memory (GB)</td>
+<td>$tot_mem</td>
+</tr>
+
+<tr>
+<td>Total HugePages Configured (GB)</td>
+<td>$tot_huge</td>
+</tr>
+
+<tr>
+<td>Total Swap Memory (GB)</td>
+<td>$tot_swp</td>
+</tr>
+
+</table>
+<br>" > /app/ODR/dyn/ODR/log/os_config.txt
+
+echo "<style>
+.collapsible {
+  background-color: gray;
+  color: white;
+  cursor: pointer;
+  padding: 18px;
+  width: 30%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+.red
+{
+background-color: red;
+}
+.green
+{
+background-color: green;
+}
+.orange
+{
+background-color: #FF8C00;
+}
+
+.active, .collapsible:hover {
+  background-color: #555;
+}
+
+.content {
+  padding: 0 18px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+  background-color: #f1f1f1;
+}
+</style>
+<button class=\"collapsible ${collapsible_color}\"><u>Disk Usage</u></button>
+<div class=\"content\">" >> /app/ODR/dyn/ODR/log/os_config.txt
+echo "<p> Collection Time : $(date) </p>" >> /app/ODR/dyn/ODR/log/os_config.txt
+df -Ph |grep -v '/home/' |grep -v ^Filesystem |awk 'BEGIN {print "<br><table  border=\"1\" style=\"border-collapse: collapse\">";print "<tr>";print "<th bgcolor=gray>Filesystem</th>";print "<th bgcolor=gray>Size (GB)</th>";print "<th bgcolor=gray>Used (GB)</th>";print "<th bgcolor=gray>Available (GB)</th>";print "<th bgcolor=gray>Used %</th>";print "</tr>"}NR > 1 {bgcolor=""; if ($5+0 >= 80) {bgcolor=" bgcolor=#FF8C00;"}if ($5+0 >= 90) {bgcolor=" bgcolor=red"}print "<tr><td"bgcolor">"$6"</td><td"bgcolor">"$2"</td><td"bgcolor">"$3"</td><td"bgcolor">"$4"</td><td"bgcolor">"$5"</td></tr>" }END {print "</table>"}' >> /app/ODR/dyn/ODR/log/os_config.txt
+
+echo "</div>" >> /app/ODR/dyn/ODR/log/os_config.txt
+
+
+
+fi
+
+done
